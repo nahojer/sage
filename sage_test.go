@@ -67,6 +67,23 @@ var tests = []struct {
 		"GET", "/parent/child/three", "nested3",
 		"GET", "/parent/child/three", "nested3", true,
 	},
+	// slashes
+	{
+		"GET", "slashes/one", "slashes1",
+		"GET", "/slashes/one", "slashes1", true,
+	},
+	{
+		"GET", "/slashes/two", "slashes2",
+		"GET", "slashes/two", "slashes2", true,
+	},
+	{
+		"GET", "slashes/three/", "slashes3",
+		"GET", "/slashes/three", "slashes3", true,
+	},
+	{
+		"GET", "/slashes/four", "slashes4",
+		"GET", "slashes/four/", "slashes4", true,
+	},
 }
 
 func TestRouteTrie(t *testing.T) {

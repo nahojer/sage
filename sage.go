@@ -17,7 +17,7 @@ func NewRouteTrie[T any]() *RouteTrie[T] {
 // Add adds value to the trie identified by given HTTP method and route pattern.
 // Subsequent calls to Add with the same method and pattern overrides the value.
 func (pt *RouteTrie[T]) Add(method, pattern string, value T) {
-	segs := strings.Split(pattern, "/")
+	segs := strings.Split(cleaned(pattern), "/")
 	if len(segs) == 0 {
 		return
 	}
@@ -48,7 +48,7 @@ func (pt *RouteTrie[T]) Add(method, pattern string, value T) {
 func (pt *RouteTrie[T]) Lookup(method, path string) (value T, found bool) {
 	var zero T
 
-	segs := strings.Split(path, "/")
+	segs := strings.Split(cleaned(path), "/")
 	if len(segs) == 0 {
 		return zero, false
 	}
@@ -77,4 +77,9 @@ type node[T any] struct {
 
 func trieKey(method, routeSegment string) string {
 	return strings.ToLower(method) + "_" + routeSegment
+}
+
+func cleaned(p string) string {
+	p = strings.Trim(p, "/")
+	return p
 }
