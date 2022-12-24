@@ -4,6 +4,8 @@ import (
 	"strings"
 )
 
+const paramKey = "*"
+
 type RouteTrie[T any] struct {
 	root *node[T]
 }
@@ -24,18 +26,32 @@ func (pt *RouteTrie[T]) Add(method, pattern string, value T) {
 
 	curr := pt.root
 	for _, seg := range segs {
-		key := trieKey(method, seg)
+		if curr.children == nil {
+			curr.children = make(map[string]*node[T])
+		}
 
+		key := trieKey(method, seg)
 		if child, found := curr.children[key]; found {
 			curr = child
 			continue
 		}
 
-		if curr.children == nil {
-			curr.children = make(map[string]*node[T])
+		var params []string
+		if strings.HasPrefix(seg, ":") {
+			params = append(params, strings.TrimLeft(seg, ":"))
 		}
 
-		toAdd := node[T]{}
+		if len(params) > 0 {
+			key = paramKey
+
+			if child, found := curr.children[key]; found {
+				curr = child
+				curr.params = append(curr.params, params...)
+				continue
+			}
+		}
+
+		toAdd := node[T]{params: params}
 		curr.children[key] = &toAdd
 		curr = &toAdd
 	}
@@ -47,12 +63,12 @@ func (pt *RouteTrie[T]) Add(method, pattern string, value T) {
 
 // Lookup searches for the value associated with given HTTP method and URL
 // path.
-func (pt *RouteTrie[T]) Lookup(method, path string) (value T, found bool) {
+func (pt *RouteTrie[T]) Lookup(method, path string) (value T, params map[string]string, found bool) {
 	var zero T
 
 	segs := pathSegments(path)
 	if len(segs) == 0 {
-		return zero, false
+		return zero, nil, false
 	}
 
 	curr := pt.root
@@ -60,36 +76,50 @@ func (pt *RouteTrie[T]) Lookup(method, path string) (value T, found bool) {
 		prefixMatch bool
 		prefixValue T
 	)
+	params = make(map[string]string)
 	for _, seg := range segs {
-		next, ok := curr.children[trieKey(method, seg)]
-		if !ok {
-			if prefixMatch {
-				break
-			}
-			return zero, false
-		}
-		curr = next
-
 		if curr.prefix {
 			prefixMatch = true
 			prefixValue = curr.value
 		}
+
+		key := trieKey(method, seg)
+
+		next, found := curr.children[key]
+		if !found {
+			if next, found := curr.children[paramKey]; found {
+				curr = next
+				for _, name := range curr.params {
+					params[name] = seg
+				}
+				continue
+			}
+
+			if prefixMatch {
+				break
+			}
+
+			return zero, nil, false
+		}
+
+		curr = next
 	}
 
 	if curr.valid {
-		return curr.value, true
+		return curr.value, params, true
 	}
 
 	if prefixMatch {
-		return prefixValue, true
+		return prefixValue, params, true
 	}
 
-	return zero, false
+	return zero, nil, false
 }
 
 type node[T any] struct {
 	children map[string]*node[T]
 	valid    bool
+	params   []string
 	prefix   bool
 	value    T
 }
