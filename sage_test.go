@@ -84,6 +84,23 @@ var tests = []struct {
 		"GET", "/slashes/four", "slashes4",
 		"GET", "slashes/four/", "slashes4", true,
 	},
+	// prefix
+	{
+		"GET", "/prefix/", "prefix",
+		"GET", "/prefix/anything/else", "prefix", true,
+	},
+	{
+		"GET", "/not-prefix", "not-prefix",
+		"GET", "/not-prefix/anything/else", "", false,
+	},
+	{
+		"GET", "/prefixdots...", "prefixdots1",
+		"GET", "/prefixdots/anything/else", "prefixdots1", true,
+	},
+	{
+		"POST", "/prefixdots...", "prefixdots2",
+		"POST", "/prefixdots", "prefixdots2", true,
+	},
 }
 
 func TestRouteTrie(t *testing.T) {

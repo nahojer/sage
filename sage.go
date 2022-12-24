@@ -17,7 +17,7 @@ func NewRouteTrie[T any]() *RouteTrie[T] {
 // Add adds value to the trie identified by given HTTP method and route pattern.
 // Subsequent calls to Add with the same method and pattern overrides the value.
 func (pt *RouteTrie[T]) Add(method, pattern string, value T) {
-	segs := strings.Split(cleaned(pattern), "/")
+	segs := pathSegments(strings.TrimRight(pattern, "..."))
 	if len(segs) == 0 {
 		return
 	}
@@ -41,37 +41,56 @@ func (pt *RouteTrie[T]) Add(method, pattern string, value T) {
 	}
 
 	curr.value = value
+	curr.prefix = strings.HasSuffix(pattern, "/") || strings.HasSuffix(pattern, "...")
 	curr.valid = true
 }
 
-// Lookup search for the value associated with given HTTP method and URL path.
+// Lookup searches for the value associated with given HTTP method and URL
+// path.
 func (pt *RouteTrie[T]) Lookup(method, path string) (value T, found bool) {
 	var zero T
 
-	segs := strings.Split(cleaned(path), "/")
+	segs := pathSegments(path)
 	if len(segs) == 0 {
 		return zero, false
 	}
 
 	curr := pt.root
+	var (
+		prefixMatch bool
+		prefixValue T
+	)
 	for _, seg := range segs {
 		next, ok := curr.children[trieKey(method, seg)]
 		if !ok {
+			if prefixMatch {
+				break
+			}
 			return zero, false
 		}
 		curr = next
+
+		if curr.prefix {
+			prefixMatch = true
+			prefixValue = curr.value
+		}
 	}
 
-	if !curr.valid {
-		return zero, false
+	if curr.valid {
+		return curr.value, true
 	}
 
-	return curr.value, true
+	if prefixMatch {
+		return prefixValue, true
+	}
+
+	return zero, false
 }
 
 type node[T any] struct {
 	children map[string]*node[T]
 	valid    bool
+	prefix   bool
 	value    T
 }
 
@@ -79,7 +98,6 @@ func trieKey(method, routeSegment string) string {
 	return strings.ToLower(method) + "_" + routeSegment
 }
 
-func cleaned(p string) string {
-	p = strings.Trim(p, "/")
-	return p
+func pathSegments(p string) []string {
+	return strings.Split(strings.Trim(p, "/"), "/")
 }
