@@ -102,6 +102,10 @@ var tests = []struct {
 		"POST", "/prefixdots...", "prefixdots2",
 		"POST", "/prefixdots", "prefixdots2", nil, true,
 	},
+	{
+		"DELETE", "/prefixdots/...", "prefixdots3",
+		"DELETE", "/prefixdots/anything/else", "prefixdots3", nil, true,
+	},
 	// path params
 	{
 		"GET", "/path-param/:id", "params1",
