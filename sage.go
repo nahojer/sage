@@ -5,20 +5,25 @@ import (
 	"strings"
 )
 
+// paramKey is the key into parameter nodes of path segments.
 const paramKey = "*"
 
+// RouteTrie is a trie data structure that supports storing/retrieving HTTP
+// route values.
 type RouteTrie[T any] struct {
 	root *node[T]
 }
 
+// NewRouteTrie returns a new RouteTrie storing route values of type T.
 func NewRouteTrie[T any]() *RouteTrie[T] {
 	return &RouteTrie[T]{
 		root: &node[T]{},
 	}
 }
 
-// Add adds value to the trie identified by given HTTP method and route pattern.
-// Subsequent calls to Add with the same method and pattern overrides the value.
+// Add inserts the route value to the trie at the location defined by given
+// HTTP method and URL path pattern. Subsequent calls to Add with the same
+// method and pattern overrides the route value.
 func (pt *RouteTrie[T]) Add(method, pattern string, value T) {
 	segs := pathSegments(strings.TrimRight(pattern, "..."))
 	if len(segs) == 0 {
@@ -62,8 +67,7 @@ func (pt *RouteTrie[T]) Add(method, pattern string, value T) {
 	curr.valid = true
 }
 
-// Lookup searches for the value associated with given HTTP method and URL
-// path.
+// Lookup searches for the route value associated with with HTTP request.
 func (pt *RouteTrie[T]) Lookup(req *http.Request) (value T, params map[string]string, found bool) {
 	var zero T
 
