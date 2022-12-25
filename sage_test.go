@@ -1,6 +1,7 @@
 package sage_test
 
 import (
+	"net/http/httptest"
 	"testing"
 
 	"github.com/nahojer/sage"
@@ -74,16 +75,8 @@ var tests = []struct {
 		"GET", "/slashes/one", "slashes1", nil, true,
 	},
 	{
-		"GET", "/slashes/two", "slashes2",
-		"GET", "slashes/two", "slashes2", nil, true,
-	},
-	{
-		"GET", "slashes/three/", "slashes3",
-		"GET", "/slashes/three", "slashes3", nil, true,
-	},
-	{
-		"GET", "/slashes/four", "slashes4",
-		"GET", "slashes/four/", "slashes4", nil, true,
+		"GET", "slashes/two/", "slashes2",
+		"GET", "/slashes/two", "slashes2", nil, true,
 	},
 	// prefix
 	{
@@ -153,7 +146,9 @@ func TestRouteTrie(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		gotValue, gotParams, found := pt.Lookup(tt.Method, tt.Path)
+		req := httptest.NewRequest(tt.Method, "http://localhost"+tt.Path, nil)
+
+		gotValue, gotParams, found := pt.Lookup(req)
 		if found != tt.Match || gotValue != tt.WantValue || !isSubset(gotParams, tt.WantParams) {
 			t.Errorf("Lookup(%q, %q) = %q, %+v, %t; want %q, %+v, %t",
 				tt.Method, tt.Path, gotValue, gotParams, found, tt.WantValue, tt.WantParams, tt.Match)

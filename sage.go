@@ -1,6 +1,7 @@
 package sage
 
 import (
+	"net/http"
 	"strings"
 )
 
@@ -63,10 +64,10 @@ func (pt *RouteTrie[T]) Add(method, pattern string, value T) {
 
 // Lookup searches for the value associated with given HTTP method and URL
 // path.
-func (pt *RouteTrie[T]) Lookup(method, path string) (value T, params map[string]string, found bool) {
+func (pt *RouteTrie[T]) Lookup(req *http.Request) (value T, params map[string]string, found bool) {
 	var zero T
 
-	segs := pathSegments(path)
+	segs := pathSegments(req.URL.Path)
 	if len(segs) == 0 {
 		return zero, nil, false
 	}
@@ -83,7 +84,7 @@ func (pt *RouteTrie[T]) Lookup(method, path string) (value T, params map[string]
 			prefixValue = curr.value
 		}
 
-		key := trieKey(method, seg)
+		key := trieKey(req.Method, seg)
 
 		next, found := curr.children[key]
 		if !found {
