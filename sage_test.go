@@ -139,16 +139,16 @@ var tests = []struct {
 }
 
 func TestRouteTrie(t *testing.T) {
-	pt := sage.NewRouteTrie[string]()
+	rt := sage.NewRouteTrie[string]()
 
 	for _, tt := range tests {
-		pt.Add(tt.RouteMethod, tt.RoutePattern, tt.RouteValue)
+		rt.Add(tt.RouteMethod, tt.RoutePattern, tt.RouteValue)
 	}
 
 	for _, tt := range tests {
 		req := httptest.NewRequest(tt.Method, "http://localhost"+tt.Path, nil)
 
-		gotValue, gotParams, found := pt.Lookup(req)
+		gotValue, gotParams, found := rt.Lookup(req)
 		if found != tt.Match || gotValue != tt.WantValue || !isSubset(gotParams, tt.WantParams) {
 			t.Errorf("Lookup(%q, %q) = %q, %+v, %t; want %q, %+v, %t",
 				tt.Method, tt.Path, gotValue, gotParams, found, tt.WantValue, tt.WantParams, tt.Match)
