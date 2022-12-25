@@ -39,13 +39,13 @@ func NewRouteTrie[T any]() *RouteTrie[T] {
 // Add inserts the route value to the trie at the location defined by given
 // HTTP method and URL path pattern. Subsequent calls to Add with the same
 // method and pattern overrides the route value.
-func (pt *RouteTrie[T]) Add(method, pattern string, value T) {
+func (rt *RouteTrie[T]) Add(method, pattern string, value T) {
 	segs := pathSegments(strings.TrimRight(pattern, "..."))
 	if len(segs) == 0 {
 		return
 	}
 
-	curr := pt.root
+	curr := rt.root
 	for _, seg := range segs {
 		if curr.children == nil {
 			curr.children = make(map[string]*node[T])
@@ -58,7 +58,7 @@ func (pt *RouteTrie[T]) Add(method, pattern string, value T) {
 		}
 
 		var params []string
-		if name, isParam := pt.ParamFunc(seg); isParam {
+		if name, isParam := rt.ParamFunc(seg); isParam {
 			params = append(params, name)
 		}
 
@@ -82,8 +82,8 @@ func (pt *RouteTrie[T]) Add(method, pattern string, value T) {
 	curr.valid = true
 }
 
-// Lookup searches for the route value associated with with HTTP request.
-func (pt *RouteTrie[T]) Lookup(req *http.Request) (value T, params map[string]string, found bool) {
+// Lookup searches for the route value associated with given HTTP request.
+func (rt *RouteTrie[T]) Lookup(req *http.Request) (value T, params map[string]string, found bool) {
 	var zero T
 
 	segs := pathSegments(req.URL.Path)
@@ -91,7 +91,7 @@ func (pt *RouteTrie[T]) Lookup(req *http.Request) (value T, params map[string]st
 		return zero, nil, false
 	}
 
-	curr := pt.root
+	curr := rt.root
 	var (
 		prefixMatch bool
 		prefixValue T
