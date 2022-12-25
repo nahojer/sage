@@ -134,6 +134,15 @@ var tests = []struct {
 			"group": "beatles",
 		}, true,
 	},
+	// misc no matches
+	{
+		"GET", "/not/enough", "notenough1",
+		"GET", "/not/enough/items", "", nil, false,
+	},
+	{
+		"POST", "/not/enough/items", "notenough2",
+		"POST", "/not/enough", "", nil, false,
+	},
 }
 
 func TestRouteTrie(t *testing.T) {
