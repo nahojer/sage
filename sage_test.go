@@ -2,6 +2,7 @@ package sage_test
 
 import (
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/nahojer/sage"
@@ -153,6 +154,39 @@ func TestRouteTrie(t *testing.T) {
 			t.Errorf("Lookup(%q, %q) = %q, %+v, %t; want %q, %+v, %t",
 				tt.Method, tt.Path, gotValue, gotParams, found, tt.WantValue, tt.WantParams, tt.Match)
 		}
+	}
+}
+
+func TestRouteTrie_CustomParamFunc(t *testing.T) {
+	rt := sage.NewRouteTrie[string]()
+	rt.ParamFunc = func(pathSegment string) (name string, isParam bool) {
+		if !strings.HasPrefix(pathSegment, "{") || !strings.HasSuffix(pathSegment, "}") {
+			return "", false
+		}
+		return strings.TrimRight(strings.TrimLeft(pathSegment, "{"), "}"), true
+	}
+
+	wantValue := "myValue"
+
+	rt.Add("GET", "/meaning-of-life/{answer}", wantValue)
+
+	req := httptest.NewRequest("GET", "http://localhost/meaning-of-life/42", nil)
+	gotValue, gotParams, found := rt.Lookup(req)
+	if !found {
+		t.Fatal("Should be able to find value")
+	}
+
+	if gotValue != wantValue {
+		t.Errorf("got value %q, want %q", gotValue, wantValue)
+	}
+
+	gotParamValue, ok := gotParams["answer"]
+	if !ok {
+		t.Fatalf("Should have param \"answer\"")
+	}
+
+	if wantParamValue := "42"; gotParamValue != wantParamValue {
+		t.Errorf("got param value %q, want %q", gotParamValue, wantParamValue)
 	}
 }
 

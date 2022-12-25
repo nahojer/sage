@@ -11,12 +11,27 @@ const paramKey = "*"
 // RouteTrie is a trie data structure that supports storing/retrieving HTTP
 // route values.
 type RouteTrie[T any] struct {
+	// ParamFunc returns whether given path segment is parameterized and the name
+	// to give this parameter. The name will be the key into params returned by
+	// [RouteTrie.Lookup].
+	//
+	// The default ParamFunc consideres a path segment a parameter if it is
+	// prefixed with a colon (":") and the name is the path segment with all
+	// leading colons trimmed.
+	ParamFunc func(pathSegment string) (name string, isParam bool)
+
 	root *node[T]
 }
 
 // NewRouteTrie returns a new RouteTrie storing route values of type T.
 func NewRouteTrie[T any]() *RouteTrie[T] {
 	return &RouteTrie[T]{
+		ParamFunc: func(pathSegment string) (name string, isParam bool) {
+			if !strings.HasPrefix(pathSegment, ":") {
+				return "", false
+			}
+			return strings.TrimLeft(pathSegment, ":"), true
+		},
 		root: &node[T]{},
 	}
 }
@@ -43,8 +58,8 @@ func (pt *RouteTrie[T]) Add(method, pattern string, value T) {
 		}
 
 		var params []string
-		if strings.HasPrefix(seg, ":") {
-			params = append(params, strings.TrimLeft(seg, ":"))
+		if name, isParam := pt.ParamFunc(seg); isParam {
+			params = append(params, name)
 		}
 
 		if len(params) > 0 {
