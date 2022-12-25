@@ -1,3 +1,7 @@
+// Package sage provides support for developing HTTP routers by exporting a
+// trie data structure that matches incoming requests against a list of
+// registered routes and returns a route value (typically [http.Handler],
+// or a variation of it) for the route that matches the URL and HTTP method.
 package sage
 
 import (
@@ -5,19 +9,18 @@ import (
 	"strings"
 )
 
-// paramKey is the key into parameter nodes of path segments.
+// paramKey is the key into nodes that hold parameterized path segments.
 const paramKey = "*"
 
-// RouteTrie is a trie data structure that supports storing/retrieving HTTP
-// route values.
+// RoutesTrie is a trie data structure that stores route values of type T.
 type RoutesTrie[T any] struct {
 	// ParamFunc reports whether given path segment is parameterized and returns
 	// the name to give this parameter. The name will be the key into params
 	// returned by [RouteTrie.Lookup].
 	//
 	// The default ParamFunc consideres a path segment a parameter if it is
-	// prefixed with a colon (":") and the name is the path segment with all
-	// leading colons trimmed.
+	// prefixed with a colon (":"). The returned parameter name is the path
+	// segment with all leading colons trimmed.
 	ParamFunc func(pathSegment string) (name string, isParam bool)
 
 	root *node[T]
@@ -36,13 +39,19 @@ func NewRoutesTrie[T any]() *RoutesTrie[T] {
 	}
 }
 
-// Add inserts the route value to the trie at the location defined by given
+// Add inserts a route value to the trie at the location defined by given
 // HTTP method and URL path pattern. Subsequent calls to Add with the same
 // method and pattern overrides the route value.
 //
 // Route patterns ending with a forward slash ("/") or three dots ("...")
 // are considered prefix routes. If there are no matching routes for a
-// HTTP request's URL and method, the prefix value will be used.
+// HTTP request's URL path and method, but a part of the path matches a
+// prefix route, the prefix value will be used.
+//
+// Path parameters are specified by prefixing a path segment with a colon
+// (":"). The parameter name is the value of the path segment with leading
+// colons removed. This behaviour can be overriden by specifying your own
+// ParamFunc of the RoutesTrie.
 func (rt *RoutesTrie[T]) Add(method, pattern string, value T) {
 	segs := pathSegments(strings.TrimRight(pattern, "..."))
 	if len(segs) == 0 {
