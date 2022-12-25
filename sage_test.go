@@ -140,7 +140,7 @@ var tests = []struct {
 }
 
 func TestRouteTrie(t *testing.T) {
-	rt := sage.NewRouteTrie[string]()
+	rt := sage.NewRoutesTrie[string]()
 
 	for _, tt := range tests {
 		rt.Add(tt.RouteMethod, tt.RoutePattern, tt.RouteValue)
@@ -158,7 +158,7 @@ func TestRouteTrie(t *testing.T) {
 }
 
 func TestRouteTrie_CustomParamFunc(t *testing.T) {
-	rt := sage.NewRouteTrie[string]()
+	rt := sage.NewRoutesTrie[string]()
 	rt.ParamFunc = func(pathSegment string) (name string, isParam bool) {
 		if !strings.HasPrefix(pathSegment, "{") || !strings.HasSuffix(pathSegment, "}") {
 			return "", false

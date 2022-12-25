@@ -13,7 +13,7 @@ import (
 func Example() {
 	type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request)
 
-	routes := sage.NewRouteTrie[Handler]()
+	routes := sage.NewRoutesTrie[Handler]()
 
 	routes.Add(http.MethodGet, "/ping/:pong", func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		pong := ctx.Value("pong").(string)

@@ -10,10 +10,10 @@ const paramKey = "*"
 
 // RouteTrie is a trie data structure that supports storing/retrieving HTTP
 // route values.
-type RouteTrie[T any] struct {
-	// ParamFunc returns whether given path segment is parameterized and the name
-	// to give this parameter. The name will be the key into params returned by
-	// [RouteTrie.Lookup].
+type RoutesTrie[T any] struct {
+	// ParamFunc reports whether given path segment is parameterized and returns
+	// the name to give this parameter. The name will be the key into params
+	// returned by [RouteTrie.Lookup].
 	//
 	// The default ParamFunc consideres a path segment a parameter if it is
 	// prefixed with a colon (":") and the name is the path segment with all
@@ -23,9 +23,9 @@ type RouteTrie[T any] struct {
 	root *node[T]
 }
 
-// NewRouteTrie returns a new RouteTrie storing route values of type T.
-func NewRouteTrie[T any]() *RouteTrie[T] {
-	return &RouteTrie[T]{
+// NewRoutesTrie returns a new RouteTrie storing route values of type T.
+func NewRoutesTrie[T any]() *RoutesTrie[T] {
+	return &RoutesTrie[T]{
 		ParamFunc: func(pathSegment string) (name string, isParam bool) {
 			if !strings.HasPrefix(pathSegment, ":") {
 				return "", false
@@ -39,7 +39,11 @@ func NewRouteTrie[T any]() *RouteTrie[T] {
 // Add inserts the route value to the trie at the location defined by given
 // HTTP method and URL path pattern. Subsequent calls to Add with the same
 // method and pattern overrides the route value.
-func (rt *RouteTrie[T]) Add(method, pattern string, value T) {
+//
+// Route patterns ending with a forward slash ("/") or three dots ("...")
+// are considered prefix routes. If there are no matching routes for a
+// HTTP request's URL and method, the prefix value will be used.
+func (rt *RoutesTrie[T]) Add(method, pattern string, value T) {
 	segs := pathSegments(strings.TrimRight(pattern, "..."))
 	if len(segs) == 0 {
 		return
@@ -83,7 +87,7 @@ func (rt *RouteTrie[T]) Add(method, pattern string, value T) {
 }
 
 // Lookup searches for the route value associated with given HTTP request.
-func (rt *RouteTrie[T]) Lookup(req *http.Request) (value T, params map[string]string, found bool) {
+func (rt *RoutesTrie[T]) Lookup(req *http.Request) (value T, params map[string]string, found bool) {
 	var zero T
 
 	segs := pathSegments(req.URL.Path)
