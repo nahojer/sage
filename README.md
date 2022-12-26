@@ -7,7 +7,6 @@ Parameterization of path segments is configurable, but the API is otherwise deli
 
 * no regex matching
 * one route value per URL path and HTTP method pair
-* prefix matchin is supported, but no way to configure it
-
+* prefix matching is supported, but there is no way to configure it
 
 All of the documentation can be found on the [go.dev](https://pkg.go.dev/github.com/nahojer/sage?tab=doc) website.
