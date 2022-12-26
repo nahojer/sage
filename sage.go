@@ -1,5 +1,5 @@
 // Package sage provides support for developing HTTP routers by exporting a
-// trie data structure that matches incoming requests against a list of
+// trie data structure that matches HTTP requests against a list of
 // registered routes and returns a route value (typically [http.Handler],
 // or a variation of it) for the route that matches the URL and HTTP method.
 package sage
@@ -16,7 +16,7 @@ const paramKey = "*"
 type RoutesTrie[T any] struct {
 	// ParamFunc reports whether given path segment is parameterized and returns
 	// the name to give this parameter. The name will be the key into params
-	// returned by [RouteTrie.Lookup].
+	// returned by Lookup.
 	//
 	// The default ParamFunc consideres a path segment a parameter if it is
 	// prefixed with a colon (":"). The returned parameter name is the path
@@ -26,7 +26,7 @@ type RoutesTrie[T any] struct {
 	root *node[T]
 }
 
-// NewRoutesTrie returns a new RouteTrie storing route values of type T.
+// NewRoutesTrie returns a new RoutesTrie.
 func NewRoutesTrie[T any]() *RoutesTrie[T] {
 	return &RoutesTrie[T]{
 		ParamFunc: func(pathSegment string) (name string, isParam bool) {
@@ -50,8 +50,8 @@ func NewRoutesTrie[T any]() *RoutesTrie[T] {
 //
 // Path parameters are specified by prefixing a path segment with a colon
 // (":"). The parameter name is the value of the path segment with leading
-// colons removed. This behaviour can be overriden by specifying your own
-// ParamFunc of the RoutesTrie.
+// colons removed. This behaviour can be customized by overriding the ParamFunc
+// of the RoutesTrie.
 func (rt *RoutesTrie[T]) Add(method, pattern string, value T) {
 	segs := pathSegments(strings.TrimRight(pattern, "..."))
 	if len(segs) == 0 {
@@ -116,26 +116,25 @@ func (rt *RoutesTrie[T]) Lookup(req *http.Request) (value T, params map[string]s
 			prefixValue = curr.value
 		}
 
-		key := trieKey(req.Method, seg)
-
-		next, found := curr.children[key]
-		if !found {
-			if next, found := curr.children[paramKey]; found {
-				curr = next
-				for _, name := range curr.params {
-					params[name] = seg
-				}
-				continue
-			}
-
-			if prefixMatch {
-				break
-			}
-
-			return zero, nil, false
+		next, found := curr.children[trieKey(req.Method, seg)]
+		if found {
+			curr = next
+			continue
 		}
 
-		curr = next
+		if next, found := curr.children[paramKey]; found {
+			curr = next
+			for _, name := range curr.params {
+				params[name] = seg
+			}
+			continue
+		}
+
+		if prefixMatch {
+			break
+		}
+
+		return zero, nil, false
 	}
 
 	if curr.valid {
