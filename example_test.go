@@ -34,7 +34,6 @@ func Example() {
 
 	fmt.Printf("Status: %d\n", w.Code)
 	fmt.Printf("Body: %q\n", w.Body.String())
-
 	// Output:
 	// Status: 200
 	// Body: "It's-a me, Mario!"
