@@ -43,10 +43,9 @@ func NewRoutesTrie[T any]() *RoutesTrie[T] {
 // HTTP method and URL path pattern. Subsequent calls to Add with the same
 // method and pattern overrides the route value.
 //
-// Route patterns ending with a forward slash ("/") or three dots ("...")
-// are considered prefix routes. If there are no matching routes for a
-// HTTP request's URL path and method, but a part of the path matches a
-// prefix route, the prefix value will be used.
+// Route patterns ending with three dots ("...") are considered prefix routes.
+// If there are no matching routes for a HTTP request's URL path and method,
+// but a part of the path matches a prefix route, the prefix value will be used.
 //
 // Path parameters are specified by prefixing a path segment with a colon
 // (":"). The parameter name is the value of the path segment with leading
@@ -54,9 +53,6 @@ func NewRoutesTrie[T any]() *RoutesTrie[T] {
 // of the RoutesTrie.
 func (rt *RoutesTrie[T]) Add(method, pattern string, value T) {
 	segs := pathSegments(strings.TrimRight(pattern, "..."))
-	if len(segs) == 0 {
-		return
-	}
 
 	curr := rt.root
 	for _, seg := range segs {
@@ -91,7 +87,7 @@ func (rt *RoutesTrie[T]) Add(method, pattern string, value T) {
 	}
 
 	curr.value = value
-	curr.prefix = strings.HasSuffix(pattern, "/") || strings.HasSuffix(pattern, "...")
+	curr.prefix = strings.HasSuffix(pattern, "...")
 	curr.valid = true
 }
 
@@ -100,9 +96,6 @@ func (rt *RoutesTrie[T]) Lookup(req *http.Request) (value T, params map[string]s
 	var zero T
 
 	segs := pathSegments(req.URL.Path)
-	if len(segs) == 0 {
-		return zero, nil, false
-	}
 
 	curr := rt.root
 	var (
@@ -161,5 +154,14 @@ func trieKey(method, routeSegment string) string {
 }
 
 func pathSegments(p string) []string {
-	return strings.Split(strings.Trim(p, "/"), "/")
+	segs := strings.Split(strings.Trim(p, "/"), "/")
+
+	var cleaned []string
+	for _, seg := range segs {
+		if seg != "" {
+			cleaned = append(cleaned, seg)
+		}
+	}
+
+	return cleaned
 }

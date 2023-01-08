@@ -85,11 +85,7 @@ var tests = []struct {
 	},
 	// prefix
 	{
-		"GET", "/prefix/", "prefix",
-		"GET", "/prefix/anything/else", "prefix", nil, true,
-	},
-	{
-		"GET", "/not-prefix", "not-prefix",
+		"GET", "/not-prefix/", "",
 		"GET", "/not-prefix/anything/else", "", nil, false,
 	},
 	{
@@ -97,7 +93,7 @@ var tests = []struct {
 		"GET", "/prefixdots/anything/else", "prefixdots1", nil, true,
 	},
 	{
-		"POST", "/prefixdots...", "prefixdots2",
+		"POST", "/prefixdots/...", "prefixdots2",
 		"POST", "/prefixdots", "prefixdots2", nil, true,
 	},
 	{
@@ -118,7 +114,7 @@ var tests = []struct {
 		}, true,
 	},
 	{
-		"GET", "/path-params-prefix/:era/:group/:member/", "params3",
+		"GET", "/path-params-prefix/:era/:group/:member/...", "params3",
 		"GET", "/path-params-prefix/60s/beatles/lennon/yoko", "params3", map[string]string{
 			"era":    "60s",
 			"group":  "beatles",
@@ -126,7 +122,7 @@ var tests = []struct {
 		}, true,
 	},
 	{
-		"GET", "/path-params-prefix/:era/:group/award-winners/", "params4",
+		"GET", "/path-params-prefix/:era/:group/award-winners/...", "params4",
 		"GET", "/path-params-prefix/60s/beatles/award-winners/lennon", "params4", map[string]string{
 			"era":   "60s",
 			"group": "beatles",
@@ -157,6 +153,37 @@ func TestRoutesTrie(t *testing.T) {
 		if found != tt.Match || gotValue != tt.WantValue || !isSubset(gotParams, tt.WantParams) {
 			t.Errorf("Lookup(%q, %q) = %q, %+v, %t; want %q, %+v, %t",
 				tt.Method, tt.Path, gotValue, gotParams, found, tt.WantValue, tt.WantParams, tt.Match)
+		}
+	}
+}
+
+func TestRoutesTrie_CatchAllRoute(t *testing.T) {
+	rt := sage.NewRoutesTrie[string]()
+
+	wantValue := "myValue"
+
+	rt.Add("GET", "/...", wantValue)
+
+	tests := []struct {
+		Path string
+	}{
+		{"/"},
+		{"/one"},
+		{"/two"},
+		{"/two"},
+		{"/parent/child/one"},
+		{"/parent/child/two"},
+	}
+	for _, tt := range tests {
+		req := httptest.NewRequest("GET", "http://localhost"+tt.Path, nil)
+
+		gotValue, _, found := rt.Lookup(req)
+		if !found {
+			t.Errorf("Should be able to find value for path %q", tt.Path)
+		}
+
+		if gotValue != wantValue {
+			t.Errorf("got value %q, want %q", gotValue, wantValue)
 		}
 	}
 }
