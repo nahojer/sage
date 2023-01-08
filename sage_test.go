@@ -21,6 +21,10 @@ var tests = []struct {
 }{
 	// simple path matching
 	{
+		"GET", "/", "index",
+		"GET", "/", "index", nil, true,
+	},
+	{
 		"GET", "/one", "one",
 		"GET", "/one", "one", nil, true,
 	},
