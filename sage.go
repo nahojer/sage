@@ -52,6 +52,8 @@ func NewRoutesTrie[T any]() *RoutesTrie[T] {
 // colons removed. This behaviour can be customized by overriding the ParamFunc
 // of the RoutesTrie.
 func (rt *RoutesTrie[T]) Add(method, pattern string, value T) {
+	method = strings.ToUpper(method)
+
 	segs := pathSegments(strings.TrimRight(pattern, "..."))
 
 	curr := rt.root
@@ -86,14 +88,18 @@ func (rt *RoutesTrie[T]) Add(method, pattern string, value T) {
 		curr = &toAdd
 	}
 
-	curr.value = value
+	if curr.values == nil {
+		curr.values = make(map[string]T)
+	}
+	curr.values[method] = value
 	curr.prefix = strings.HasSuffix(pattern, "...")
-	curr.valid = true
 }
 
 // Lookup searches for the route value associated with given HTTP request.
 func (rt *RoutesTrie[T]) Lookup(req *http.Request) (value T, params map[string]string, found bool) {
 	var zero T
+
+	method := strings.ToUpper(req.Method)
 
 	segs := pathSegments(req.URL.Path)
 
@@ -105,8 +111,10 @@ func (rt *RoutesTrie[T]) Lookup(req *http.Request) (value T, params map[string]s
 	params = make(map[string]string)
 	for _, seg := range segs {
 		if curr.prefix {
-			prefixMatch = true
-			prefixValue = curr.value
+			if value, ok := curr.values[method]; ok {
+				prefixMatch = true
+				prefixValue = value
+			}
 		}
 
 		next, found := curr.children[trieKey(req.Method, seg)]
@@ -130,8 +138,8 @@ func (rt *RoutesTrie[T]) Lookup(req *http.Request) (value T, params map[string]s
 		return zero, nil, false
 	}
 
-	if curr.valid {
-		return curr.value, params, true
+	if value, ok := curr.values[method]; ok {
+		return value, params, true
 	}
 
 	if prefixMatch {
@@ -143,10 +151,10 @@ func (rt *RoutesTrie[T]) Lookup(req *http.Request) (value T, params map[string]s
 
 type node[T any] struct {
 	children map[string]*node[T]
-	valid    bool
 	params   []string
 	prefix   bool
-	value    T
+	// All routes values accessed by HTTP method.
+	values map[string]T
 }
 
 func trieKey(method, routeSegment string) string {
