@@ -165,24 +165,26 @@ func TestRoutesTrie_CatchAllRoute(t *testing.T) {
 	rt.Add("GET", "/...", wantValue)
 
 	tests := []struct {
-		Path string
+		Path   string
+		Method string
+		Match  bool
 	}{
-		{"/"},
-		{"/one"},
-		{"/two"},
-		{"/two"},
-		{"/parent/child/one"},
-		{"/parent/child/two"},
+		{"/", "GET", true},
+		{"/one", "GET", true},
+		{"/two", "GET", true},
+		{"/two", "GET", true},
+		{"/parent/child/one", "GET", true},
+		{"/parent/child/two", "GET", true},
 	}
 	for _, tt := range tests {
-		req := httptest.NewRequest("GET", "http://localhost"+tt.Path, nil)
+		req := httptest.NewRequest(tt.Method, "http://localhost"+tt.Path, nil)
 
 		gotValue, _, found := rt.Lookup(req)
-		if !found {
-			t.Errorf("Should be able to find value for path %q", tt.Path)
+		if found != tt.Match {
+			t.Errorf("Got found = %t for path %q, want %t", found, tt.Path, tt.Match)
 		}
 
-		if gotValue != wantValue {
+		if tt.Match && gotValue != wantValue {
 			t.Errorf("got value %q, want %q", gotValue, wantValue)
 		}
 	}
