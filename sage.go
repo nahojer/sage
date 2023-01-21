@@ -62,7 +62,7 @@ func (rt *RoutesTrie[T]) Add(method, pattern string, value T) {
 			curr.children = make(map[string]*node[T])
 		}
 
-		key := trieKey(method, seg)
+		key := seg
 		if child, found := curr.children[key]; found {
 			curr = child
 			continue
@@ -117,7 +117,7 @@ func (rt *RoutesTrie[T]) Lookup(req *http.Request) (value T, params map[string]s
 			}
 		}
 
-		next, found := curr.children[trieKey(req.Method, seg)]
+		next, found := curr.children[seg]
 		if found {
 			curr = next
 			continue
@@ -155,10 +155,6 @@ type node[T any] struct {
 	prefix   bool
 	// All routes values accessed by HTTP method.
 	values map[string]T
-}
-
-func trieKey(method, routeSegment string) string {
-	return strings.ToLower(method) + "_" + routeSegment
 }
 
 func pathSegments(p string) []string {
