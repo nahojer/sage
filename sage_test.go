@@ -169,12 +169,20 @@ func TestRoutesTrie_CatchAllRoute(t *testing.T) {
 		Method string
 		Match  bool
 	}{
+		// Matching routes.
 		{"/", "GET", true},
 		{"/one", "GET", true},
 		{"/two", "GET", true},
 		{"/two", "GET", true},
 		{"/parent/child/one", "GET", true},
 		{"/parent/child/two", "GET", true},
+		// Non-matching routes (bad method).
+		{"/", "POST", false},
+		{"/one", "PATCH", false},
+		{"/two", "PUT", false},
+		{"/two", "DELETE", false},
+		{"/parent/child/one", "OPTIONS", false},
+		{"/parent/child/two", "CONNECT", false},
 	}
 	for _, tt := range tests {
 		req := httptest.NewRequest(tt.Method, "http://localhost"+tt.Path, nil)
