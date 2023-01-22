@@ -11,4 +11,4 @@ Parameterization of path segments is configurable, but the API is otherwise deli
 
 All of the documentation can be found on the [go.dev](https://pkg.go.dev/github.com/nahojer/sage?tab=doc) website.
 
-Check out [salvia](https://github.com/nahojer/salvia). It uses sage under the hood to implement a HTTP router.
+Check out [httprouter](https://github.com/nahojer/httprouter). It uses sage under the hood to implement a HTTP router.
