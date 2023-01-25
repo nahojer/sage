@@ -12,3 +12,5 @@ Parameterization of path segments is configurable, but the API is otherwise deli
 All of the documentation can be found on the [go.dev](https://pkg.go.dev/github.com/nahojer/sage?tab=doc) website.
 
 Check out [httprouter](https://github.com/nahojer/httprouter). It uses sage under the hood to implement a HTTP router.
+
+Is it Good? [Yes](https://news.ycombinator.com/item?id=3067434).
