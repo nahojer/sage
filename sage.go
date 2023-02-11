@@ -117,8 +117,7 @@ func (rt *RoutesTrie[T]) Lookup(req *http.Request) (value T, params map[string]s
 			}
 		}
 
-		next, found := curr.children[seg]
-		if found {
+		if next, found := curr.children[seg]; found {
 			curr = next
 			continue
 		}
@@ -159,13 +158,15 @@ type node[T any] struct {
 
 func pathSegments(p string) []string {
 	segs := strings.Split(strings.Trim(p, "/"), "/")
+	return filter(segs, func(seg string) bool { return seg != "" })
+}
 
-	var cleaned []string
-	for _, seg := range segs {
-		if seg != "" {
-			cleaned = append(cleaned, seg)
+func filter[S any](s []S, f func(S) bool) []S {
+	var r []S
+	for _, v := range s {
+		if f(v) {
+			r = append(r, v)
 		}
 	}
-
-	return cleaned
+	return r
 }
